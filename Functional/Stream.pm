@@ -11,8 +11,11 @@ sub head {
 }
 
 sub tail {
-	my ($ls) = @_;
-	return $ls->[1];
+	my ($s) = @_;
+	if ( is_promise( $s->[1])) {
+		return $s->[1]->();
+	}
+	return $s->[1];
 }
 
 sub set_head {
@@ -25,4 +28,15 @@ sub set_tail {
 	$ls->[1] = $new_tail;
 }
 
+sub is_promise {
+	UNIVERSAL::isa($_[0],'CODE');
+}
+
+sub promise (&) { $_[0] }
+
+sub upto_list {
+	my ($m,$n) = @_;
+	return if $m>$n;
+	return node($m, promise { upto_list($m+1,$n) });
+}
 1;

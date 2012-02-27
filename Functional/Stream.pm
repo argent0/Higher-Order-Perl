@@ -13,7 +13,7 @@ sub head {
 sub tail {
 	my ($s) = @_;
 	if ( is_promise( $s->[1])) {
-		return $s->[1]->();
+		$s->[1] =  $s->[1]->();
 	}
 	return $s->[1];
 }
@@ -38,11 +38,6 @@ sub upto_list {
 	my ($m,$n) = @_;
 	return if $m>$n;
 	return node($m, promise { upto_list($m+1,$n) });
-}
-
-sub upfrom {
-	my $n = $_[0];
-	return node($n, promise { upfrom($n+1) });
 }
 
 sub show {
@@ -75,4 +70,27 @@ sub filter (&$) {
 	return if !$s;
 	node(head($s), promise { filter($f,tail($s))});
 }
+
+sub combine {
+	my $op = shift;
+	my $r;
+	$r =  sub {
+		my ($s,$t) = @_;
+		return unless $s && $t;
+		node($op->(head($s),head($t)),
+			promise { $r->(tail($s),tail($t))});
+	};
+}
+
+sub iterate_function {
+	my $f = shift;
+	return sub {
+		my $x = shift;
+		my $s;
+		$s = node($x,promise { &transform($f,$s) });
+	}
+}
+
+*upfrom = iterate_function( sub { $_[0] + 1 } );
+
 1;

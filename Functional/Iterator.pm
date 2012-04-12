@@ -113,4 +113,22 @@ sub next {
 		});
 	}
 }
+{
+	sub iFold (&) {
+		validate_pos(@_,{ type=> CODEREF } ); 
+
+		my $f = shift;
+
+		sub {
+			my $r = shift; #initial Value
+			sub {
+				my $i = shift; #iterator
+				while( is_not_empty( my $value = $i->next ) ) {
+					say "Value $value";
+					$r = $f->($r,$value);
+				}
+			}
+		}
+	}
+}
 1;

@@ -34,33 +34,38 @@ sub next {
 }
 
 {
-	sub imap(&$) {
-		validate_pos(@_,{ type=> CODEREF },{ type=> HASHREF } ); #function,#iterator
+	sub iMap(&) {
+		validate_pos(@_,{ type=> CODEREF } ); #function
+		my $f = shift;
 
-		my ($transform,$it) = @_;
+		return sub {
+			validate_pos(@_,{ type=> HASHREF } ); #iterator
+			my $it = shift;
 
-		return Iterator->new ( sub {
-			local $_ = $it->next;
-			return empty() unless is_not_empty($_);
-			return $transform->($_);
-		});
+			return Iterator->new ( sub {
+				local $_ = $it->next;
+				return empty() unless is_not_empty($_);
+				return $f->($_);
+			});
+		}
 	}
 } 
 
 {
-	sub igrep(&$) {
-		validate_pos(@_,{ type=> CODEREF },{ type=> HASHREF } ); #function,#iterator
-
-		my ($is_intresting,$it) = @_;
-
-		return Iterator->new ( sub {
+	sub iGrep(&) {
+		validate_pos(@_,{ type=> CODEREF }); #function,#iterator
+		my $predicate = shift;
+		return sub {
+			validate_pos(@_,{ type=> HASHREF } ); #function,#iterator
+			my $it = shift;
+			return Iterator->new ( sub {
 				local $_;
 				while ( is_not_empty( $_ = $it->next ) ) {
-					return $_ if $is_intresting->($_);
+					return $_ if $predicate->($_);
 				}
-
 				return empty();
-		});
+			});
+		}
 	}
 }
 
@@ -101,18 +106,19 @@ sub next {
 				my $i = $currentElement++;
 				my @ret; 
 				my $empty;
-				my $map = imap( sub { 
+				my $map = iMap { 
 							my $it = shift; 
-							$stopCondition = 1 unless is_not_empty( my $value =
-								$it->next);
+							$stopCondition = 1 unless 
+								is_not_empty( my $value = $it->next);
 							push @ret, $value;
-				},iterList(\@its) );
+				}->iterList(\@its);
 				while ( is_not_empty( $map->next) ) {}
 				return empty() if $stopCondition == 1;
 				return \@ret;
 		});
 	}
 }
+
 {
 	sub iFold (&) {
 		validate_pos(@_,{ type=> CODEREF } ); 
@@ -124,11 +130,102 @@ sub next {
 			sub {
 				my $i = shift; #iterator
 				while( is_not_empty( my $value = $i->next ) ) {
-					say "Value $value";
 					$r = $f->($r,$value);
 				}
+				return $r;
 			}
 		}
 	}
 }
+
+{
+	sub iAny (&) {
+		my $predicate = shift;
+		return sub {
+			my $iterator = shift;
+			while ( is_not_empty( my $value = $iterator->next)) {
+				return 1 if $predicate->($value);
+			}
+			return 0;
+		}
+	}
+}
+
+{ 
+	sub iPartition (&) {
+		my $predicate = shift;
+		return sub {
+			my $it = shift;
+			my @a;
+			my @b;
+
+			while (is_not_empty(my $value = $it->next)) {
+				if ($predicate->($value)) {
+					push @a,$value;
+				}else {
+					push @b,$value;
+				}
+			}
+
+			return (\@a,\@b);
+		}
+	}
+}
+
+{ 
+	sub arrayPartition (&) {
+		my $predicate = shift;
+		return sub {
+			my $it = iterList(\@_);
+			my @a;
+			my @b;
+
+			while (is_not_empty(my $value = $it->next)) {
+				if ($predicate->($value)) {
+					push @a,$value;
+				}else {
+					push @b,$value;
+				}
+			}
+
+			return (\@a,\@b);
+		}
+	}
+}
+
+{
+	sub iTakeWhile (&) {
+		my $predicate = shift;
+		return sub {
+			my $it = shift;
+			return Iterator->new( sub {
+				my $v = $it->next;
+				return $v if ( is_not_empty($v) && $predicate->($v) );
+				return empty();
+			});
+		}
+	}
+}
+
+{
+	sub iTake {
+		my $n = shift;
+		my $i = 0;
+		return iTakeWhile { $n >= $i++ };
+	}
+}
+
+#{
+#	sub iTake {
+#		my $n = shift;
+#		return sub {
+#			my $it = shift;
+#			my $i=0;
+#			return Iterator->new( sub {
+#				return $it->next if (++$i<=$n);
+#				return empty();
+#			});
+#		}
+#	}
+#}
 1;

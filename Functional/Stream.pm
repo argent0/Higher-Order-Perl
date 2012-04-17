@@ -1,4 +1,5 @@
 package Stream;
+use Functional::Iterator;
 
 sub node {
 	my ($h,$t) = @_;
@@ -49,6 +50,7 @@ sub show {
 	print $/;
 }
 
+
 sub drop {
 	my $h = head($_[0]);
 	$_[0] = tail($_[0]);
@@ -89,6 +91,16 @@ sub iterate_function {
 		my $s;
 		$s = node($x,promise { &transform($f,$s) });
 	}
+}
+
+sub iterStream {
+	my $s = shift;
+	return Iterator->new( sub {
+		if ( $s ) {
+			return drop($s);
+		}
+		return Iterator::empty();
+	});
 }
 
 *upfrom = iterate_function( sub { $_[0] + 1 } );

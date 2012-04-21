@@ -215,17 +215,11 @@ sub next {
 	}
 }
 
-#{
-#	sub iTake {
-#		my $n = shift;
-#		return sub {
-#			my $it = shift;
-#			my $i=0;
-#			return Iterator->new( sub {
-#				return $it->next if (++$i<=$n);
-#				return empty();
-#			});
-#		}
-#	}
-#}
+{
+	sub iToList {
+		my $iterator = shift;
+		iFold { push @{$_[0]}, $_[1]; $_[0] }->([])->($iterator);
+	}
+}
+
 1;

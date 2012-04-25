@@ -132,7 +132,11 @@ sub next {
 			my ($ai, $bi)  = @_;
 
 			return Iterator->new( sub {
-				
+					my $va = $ai->next;
+					my $vb = $bi->next;
+					return $joiner->($va,$vb)
+						if ( is_not_empty($va) && is_not_empty($vb) );
+					return empty();
 			});
 		}
 	}

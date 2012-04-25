@@ -120,6 +120,25 @@ sub next {
 }
 
 {
+	sub iZipWith (&) {
+		# Zips two iterators using an argument funtion;
+		# for now this will stop as soon as the shortest iterator is empty;
+		my $joiner = shift;
+		return sub {
+			# This is the sub that takes two iterators and joins them with the
+			# previously provided funcion.
+			# This shall also take a stop condition in the future
+
+			my ($ai, $bi)  = @_;
+
+			return Iterator->new( sub {
+				
+			});
+		}
+	}
+}
+
+{
 	sub iFold (&) {
 		validate_pos(@_,{ type=> CODEREF } ); 
 

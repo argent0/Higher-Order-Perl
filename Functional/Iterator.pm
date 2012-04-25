@@ -215,17 +215,12 @@ sub next {
 	}
 }
 
-#{
-#	sub iTake {
-#		my $n = shift;
-#		return sub {
-#			my $it = shift;
-#			my $i=0;
-#			return Iterator->new( sub {
-#				return $it->next if (++$i<=$n);
-#				return empty();
-#			});
-#		}
-#	}
-#}
+{
+	sub iterToList {
+		# Stores an interator into a list. This could be useful to sort things.
+		my $iterator = shift;
+		return iFold { push @{$_[0]}, $_[1]; $_[0] }->([])->($iterator);
+	}
+}
+
 1;

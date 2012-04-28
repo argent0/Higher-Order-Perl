@@ -31,6 +31,11 @@ sub next {
 		my $arg = shift;
 		return !(ref($arg) && $arg == $EXAUSTED);
 	};
+
+	sub is_empty {
+		my $arg = shift;
+		return (ref($arg) && $arg == $EXAUSTED);
+	}
 }
 
 {
@@ -125,19 +130,23 @@ sub next {
 		# for now this will stop as soon as the shortest iterator is empty;
 		my $joiner = shift;
 		return sub {
-			# This is the sub that takes two iterators and joins them with the
-			# previously provided funcion.
-			# This shall also take a stop condition in the future
+			my $stopCondition = shift || 
+				sub { is_empty($_[0]) || is_empty($_[1]) };
+			return sub {
+				# This is the sub that takes two iterators and joins them with the
+				# previously provided funcion.
+				# This shall also take a stop condition in the future
 
-			my ($ai, $bi)  = @_;
+				my ($ai, $bi)  = @_;
 
-			return Iterator->new( sub {
-					my $va = $ai->next;
-					my $vb = $bi->next;
-					return $joiner->($va,$vb)
-						if ( is_not_empty($va) && is_not_empty($vb) );
-					return empty();
-			});
+				return Iterator->new( sub {
+						my $va = $ai->next;
+						my $vb = $bi->next;
+						return empty()
+							if $stopCondition->($va,$vb);
+						return $joiner->($va,$vb)
+				});
+			}
 		}
 	}
 }
